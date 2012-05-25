@@ -8,7 +8,12 @@ var Cookie = {
 	},
 
 	init : function(options, data) {
-		Cookie.options = Object.extend(Cookie.options, options || {});
+		options = options || {};
+    for (var option_name in options) {
+    	if (Cookie.options[option_name]) {
+	    	Cookie.options[option_name] = options[option_name];
+    	}
+    }
 
 		var payload = Cookie.retrieve();
 		if (payload) {
