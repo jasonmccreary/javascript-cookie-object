@@ -9,11 +9,11 @@ var Cookie = {
 
 	init : function(options, data) {
 		options = options || {};
-    for (var option_name in options) {
-    	if (Cookie.options[option_name]) {
-	    	Cookie.options[option_name] = options[option_name];
-    	}
-    }
+		for (var option_name in options) {
+			if (Cookie.options[option_name]) {
+				Cookie.options[option_name] = options[option_name];
+			}
+		}
 
 		var payload = Cookie.retrieve();
 		if (payload) {
