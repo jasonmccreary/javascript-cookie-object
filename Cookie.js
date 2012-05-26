@@ -1,9 +1,11 @@
 var Cookie = {
 	data : {},
 	options : {
-		"expires" : null,
-		"domain" : "",
-		"path" : "",
+		"name": null,
+		"max-age": null,
+		"expires": null,
+		"domain": "",
+		"path": "",
 		"secure" : false
 	},
 
@@ -17,7 +19,7 @@ var Cookie = {
 
 		var payload = Cookie.retrieve();
 		if (payload) {
-			Cookie.data = payload.evalJSON();
+			Cookie.data = payload;
 		}
 		else {
 			Cookie.data = data || {};
@@ -65,7 +67,7 @@ var Cookie = {
 			expires = ';expires=' + new Date(today.getTime() + expires);
 		}
 
-		document.cookie = Cookie.options.name + '=' + escape(Object.toJSON(Cookie.data)) + Cookie.getOptions() + expires;
+		document.cookie = Cookie.options.name + '=' + escape(JSON.toString(Cookie.data)) + Cookie.getOptions() + expires;
 	},
 	erase : function() {
 		document.cookie = Cookie.options.name + '=' + Cookie.getOptions() + ';expires=Thu, 01-Jan-1970 00:00:01 GMT';
