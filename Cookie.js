@@ -1,5 +1,6 @@
 var Cookie = {
 	data : {},
+	name : 'cookie_name',
 	options : {
 		"name": null,
 		"max-age": null,
@@ -9,47 +10,55 @@ var Cookie = {
 		"secure" : false
 	},
 
-	init : function(options, data) {
+	init : function(name, options) {
+		this.name = name || this.name; 
+		
 		options = options || {};
-		for (var option_name in options) {
-			if (Cookie.options[option_name]) {
-				Cookie.options[option_name] = options[option_name];
-			}
-		}
-
-		var payload = Cookie.retrieve();
+		this.options.max_age = options.max_age || this.options.max_age;
+		this.options.expires = options.expires || this.options.expires;
+		this.options.domain = options.domain || this.options.domain;
+		this.options.path = options.path || this.options.path;
+		this.options.secure = options.secure || this.options.secure;
+		
+		var payload = this.find();
 		if (payload) {
-			Cookie.data = payload;
+			this.data = payload;
 		}
 		else {
-			Cookie.data = data || {};
+			this.data = {};
 		}
-
-		Cookie.store();
 	},
-	getData : function(key) {
-		return Cookie.data[key];
+	// public
+	get : function(key) {
+		return this.data[key];
 	},
-	setData : function(key, value) {
-		Cookie.data[key] = value;
-		Cookie.store();
+	set : function(key, value) {
+		this.data[key] = value;
+		this.save();
 	},
-	removeData : function(key) {
-		delete Cookie.data[key];
-		Cookie.store();
+	delete : function(key) {
+		delete this.data[key];
+		this.save();
 	},
-	retrieve : function() {
-		var start = document.cookie.indexOf(Cookie.options.name + "=");
+	save : function() {
+		document.cookie = this.name + '=' + escape(JSON.toString(this.data)) + this.getOptions();
+	},
+	destroy : function() {
+		document.cookie = this.name + '=' + this.getOptions(false) + ';expires=Thu, 01-Jan-1970 00:00:01 GMT';
+	},
+	// private
+	find : function() {
+		var start = document.cookie.indexOf(this.name + "=");
 
 		if (start == -1) {
 			return null;
 		}
 
-		if (Cookie.options.name != document.cookie.substr(start, Cookie.options.name.length)) {
+		if (this.name != document.cookie.substr(start, this.name.length)) {
 			return null;
 		}
 
-		var len = start + Cookie.options.name.length + 1;
+		var len = start + this.name.length + 1;
 		var end = document.cookie.indexOf(';', len);
 
 		if (end == -1) {
@@ -58,21 +67,29 @@ var Cookie = {
 
 		return unescape(document.cookie.substring(len, end));
 	},
-	store : function() {
-		var expires = '';
+	getOptions : function(include_expires) {
+		include_expires = include_expires !== false;
+		
+		var opts = []; 
 
-		if (Cookie.options.expires) {
-			var today = new Date();
-			expires = Cookie.options.expires * 86400000;
-			expires = ';expires=' + new Date(today.getTime() + expires);
+		for (key in this.options) {
+			if (this.options[key]) {
+				if (key == 'expires') {
+					if (include_expires) {
+						var today = new Date();
+						var ttl = this.options.expires * 86400000;
+						opts.push('expires=' + new Date(today.getTime() + ttl));
+					}
+				}
+				else if (key == 'secure') {
+					opts.push('secure');
+				}
+				else {
+					opts.push(key + '=' + this.options[key]);
+				}
+			}
 		}
 
-		document.cookie = Cookie.options.name + '=' + escape(JSON.toString(Cookie.data)) + Cookie.getOptions() + expires;
-	},
-	erase : function() {
-		document.cookie = Cookie.options.name + '=' + Cookie.getOptions() + ';expires=Thu, 01-Jan-1970 00:00:01 GMT';
-	},
-	getOptions : function() {
-		return (Cookie.options.path ? ';path=' + Cookie.options.path : '') + (Cookie.options.domain ? ';domain=' + Cookie.options.domain : '') + (Cookie.options.secure ? ';secure' : '');
+		return opts.join(';')
 	}
 };
