@@ -1,95 +1,88 @@
-var Cookie = {
-	data : {},
-	name : 'cookie_name',
-	options : {
-		"name": null,
-		"max-age": null,
-		"expires": null,
-		"domain": "",
-		"path": "",
-		"secure" : false
-	},
+function Cookie(name, opts) {
+	if (!name || typeof name != 'string') {
+		throw 'Cookie name must be a valid string: ' + name + ' (' + typeof name + ') given.';
+	}
 
-	init : function(name, options) {
-		this.name = name || this.name; 
-		
-		options = options || {};
-		this.options.max_age = options.max_age || this.options.max_age;
-		this.options.expires = options.expires || this.options.expires;
-		this.options.domain = options.domain || this.options.domain;
-		this.options.path = options.path || this.options.path;
-		this.options.secure = options.secure || this.options.secure;
-		
-		var payload = this.find();
-		if (payload) {
-			this.data = payload;
-		}
-		else {
-			this.data = {};
-		}
-	},
+	this.name = name;
+
+	var data = find() || {};
+	
+	var options = {};
+	opts = opts || {};
+	options.expires = opts.expires || null;
+	options.domain = opts.domain || null;
+	options.path = opts.path || null;
+	options.secure = opts.secure || false;
+
 	// public
-	get : function(key) {
-		return this.data[key];
-	},
-	set : function(key, value) {
-		this.data[key] = value;
+	this.get = function(key) {
+		return data[key];
+	}
+
+	this.set = function(key, value) {
+		data[key] = value;
 		this.save();
-	},
-	delete : function(key) {
-		delete this.data[key];
+	}
+	
+	this.delete = function(key) {
+		delete that.data[key];
 		this.save();
-	},
-	save : function() {
-		document.cookie = this.name + '=' + escape(JSON.toString(this.data)) + this.getOptions();
-	},
-	destroy : function() {
-		document.cookie = this.name + '=' + this.getOptions(false) + ';expires=Thu, 01-Jan-1970 00:00:01 GMT';
-	},
+	}
+	
+	this.save = function() {
+		document.cookie = this.name + '=' + escape(JSON.stringify(data)) + getOptions();
+	}
+	
+	this.destroy = function() {
+		document.cookie = this.name + '=' + getOptions(false) + ';expires=Thu, 01 Jan 1970 00:00:00 GMT;max-age:0';
+	}
+	
 	// private
-	find : function() {
-		var start = document.cookie.indexOf(this.name + "=");
+	function find() {
+		var start = document.cookie.indexOf(name + "=");
 
 		if (start == -1) {
 			return null;
 		}
 
-		if (this.name != document.cookie.substr(start, this.name.length)) {
+		if (name != document.cookie.substr(start, name.length)) {
 			return null;
 		}
 
-		var len = start + this.name.length + 1;
+		var len = start + name.length + 1;
 		var end = document.cookie.indexOf(';', len);
 
 		if (end == -1) {
 			end = document.cookie.length;
 		}
 
-		return unescape(document.cookie.substring(len, end));
-	},
-	getOptions : function(include_expires) {
+		return JSON.parse(unescape(document.cookie.substring(len, end)));
+	}
+	
+	function getOptions(include_expires) {
 		include_expires = include_expires !== false;
 		
 		var opts = []; 
 
-		for (key in this.options) {
-			if (this.options[key]) {
+		for (key in options) {
+			if (options[key]) {
 				if (key == 'expires') {
 					if (include_expires) {
 						var today = new Date();
-						var ttl = this.options.expires * 86400000;
-						opts.push('expires=' + new Date(today.getTime() + ttl));
+						var ttl = options.expires * 86400000;
+						opts.push('expires=' + new Date(today.getTime() + ttl).toUTCString());
+						opts.push('max-age=' + ttl/1000);
 					}
 				}
 				else if (key == 'secure') {
 					opts.push('secure');
 				}
 				else {
-					opts.push(key + '=' + this.options[key]);
+					opts.push(key + '=' + options[key]);
 				}
 			}
 		}
 
-		return opts.join(';')
+		return opts.length ? ';' + opts.join(';') : '';
 	}
-};
+}
